@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 29
@@ -12,6 +13,7 @@ android {
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,6 +34,27 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation "com.google.android.gms:play-services-maps:$play_services_version"
     implementation "com.google.android.gms:play-services-location:$play_services_version"
+    implementation "com.google.android.libraries.places:places:$places"
+
+    implementation "android.arch.lifecycle:extensions:$architecture_version"
+    implementation "android.arch.persistence.room:runtime:$room_version"
+    annotationProcessor "android.arch.lifecycle:compiler: $architecture_version"
+    implementation "androidx.room:room-runtime:$room_version"
+    kapt "android.arch.persistence.room:compiler:$room_version"
+    kapt "androidx.room:room-compiler:$room_version" // For Kotlin use kapt instead of annotationProcessor
+    // optional - Kotlin Extensions and Coroutines support for Room
+    implementation "androidx.room:room-ktx:$room_version"
+    // optional - RxJava support for Room
+    implementation "androidx.room:room-rxjava2:$room_version"
+    // Test helpers
+    testImplementation "androidx.room:room-testing:$room_version"
+
+    //design support library
+    implementation "com.android.support:appcompat-v7:$support_lib_version"
+    implementation "com.android.support:design:$support_lib_version"
+
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines"
+
 
     //timber logging
     implementation 'com.jakewharton.timber:timber:4.7.1'
