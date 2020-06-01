@@ -1,4 +1,4 @@
-package com.example.myfinalproject
+package com.example.myfinalproject.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
+import com.example.myfinalproject.R
 import com.example.myfinalproject.adapter.BookmarkInfoAdapter
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -62,16 +63,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         displayPoiGetPlaceStep(pointOfInterest)
     }
 
-    private fun displayPoiGetPlaceStep(pointOfInterest:
-                                       PointOfInterest) {
+    private fun displayPoiGetPlaceStep(
+        pointOfInterest:
+        PointOfInterest
+    ) {
         val placeId = pointOfInterest.placeId
 
-        val placeFields = listOf(Place.Field.ID,
+        val placeFields = listOf(
+            Place.Field.ID,
             Place.Field.NAME,
             Place.Field.PHONE_NUMBER,
             Place.Field.PHOTO_METADATAS,
             Place.Field.ADDRESS,
-            Place.Field.LAT_LNG)
+            Place.Field.LAT_LNG
+        )
 
         val request = FetchPlaceRequest
             .builder(placeId, placeFields)
@@ -84,9 +89,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }.addOnFailureListener { exception ->
                 if (exception is ApiException) {
                     val statusCode = exception.statusCode
-                    Timber.tag(TAG).e("Place not found: " +
-                            exception.message + ", " +
-                            "statusCode: " + statusCode)
+                    Timber.tag(TAG).e(
+                        "Place not found: " +
+                                exception.message + ", " +
+                                "statusCode: " + statusCode
+                    )
                 }
             }
     }
@@ -107,25 +114,30 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }.addOnFailureListener { exception ->
             if (exception is ApiException) {
                 val statusCode = exception.statusCode
-                Timber.tag(TAG).e("Place not found: " +
-                        exception.message + ", " +
-                        "statusCode: " + statusCode)
+                Timber.tag(TAG).e(
+                    "Place not found: " +
+                            exception.message + ", " +
+                            "statusCode: " + statusCode
+                )
             }
         }
     }
 
     private fun displayPoiDisplayStep(place: Place, photo: Bitmap?) {
-        val marker = map.addMarker(MarkerOptions()
-            .position(place.latLng as LatLng)
-            .title(place.name)
-            .snippet(place.phoneNumber)
+        val marker = map.addMarker(
+            MarkerOptions()
+                .position(place.latLng as LatLng)
+                .title(place.name)
+                .snippet(place.phoneNumber)
         )
         marker?.tag = photo
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int,
-                                            permissions: Array<String>,
-                                            grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
         if (requestCode == REQUEST_LOCATION) {
             if (grantResults.size == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 getCurrentLocation()
@@ -141,9 +153,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun getCurrentLocation() {
 
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) !=
-            PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
             requestLocationPermissions()
         } else {
             map.isMyLocationEnabled = true
@@ -162,9 +177,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun requestLocationPermissions() {
-        ActivityCompat.requestPermissions(this,
+        ActivityCompat.requestPermissions(
+            this,
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-            REQUEST_LOCATION)
+            REQUEST_LOCATION
+        )
     }
 
     companion object {
