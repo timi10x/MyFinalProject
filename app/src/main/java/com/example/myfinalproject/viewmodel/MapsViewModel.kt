@@ -5,13 +5,14 @@ import android.graphics.Bitmap
 import androidx.lifecycle.AndroidViewModel
 import com.example.myfinalproject.repository.BookmarkRepo
 import com.google.android.libraries.places.api.model.Place
+import timber.log.Timber
 
 class MapsViewModel(application: Application) : AndroidViewModel(application) {
     private val TAG = "MapsViewModel"
 
     private var bookmarkRepo: BookmarkRepo = BookmarkRepo(getApplication())
 
-    fun addBoolmarkFomPlace(place: Place, image: Bitmap?) {
+    fun addBookmarkFomPlace(place: Place, image: Bitmap?) {
         val bookmark = bookmarkRepo.createBookmark()
         bookmark.placeId = place.id
         bookmark.name = place.name.toString()
@@ -20,6 +21,7 @@ class MapsViewModel(application: Application) : AndroidViewModel(application) {
         bookmark.phone = place.phoneNumber.toString()
         bookmark.address = place.address.toString()
 
-        val newId = bookmarkRepo.allBookmarks(bookmark)
+        val newId = bookmarkRepo.addBookMark(bookmark)
+        Timber.tag(TAG).i("New bookmark $newId added to the database")
     }
 }

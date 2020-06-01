@@ -6,8 +6,10 @@ import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.ViewModelProviders
 import com.example.myfinalproject.R
 import com.example.myfinalproject.adapter.BookmarkInfoAdapter
+import com.example.myfinalproject.viewmodel.MapsViewModel
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -17,6 +19,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PointOfInterest
 import timber.log.Timber
@@ -30,6 +33,7 @@ import com.google.android.libraries.places.api.net.PlacesClient
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var map: GoogleMap
     private lateinit var placesClient: PlacesClient
+    private lateinit var mapsViewModel: MapsViewModel
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,16 +46,31 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         setupLocationClient()
         setupPlacesClient()
+        setupViewModel()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
-        map.setInfoWindowAdapter(BookmarkInfoAdapter(this))
+        setupMapListeners()
+        setupViewModel()
         getCurrentLocation()
+    }
+
+    private fun setupMapListeners() {
+        map.setInfoWindowAdapter(BookmarkInfoAdapter(this))
         map.setOnPoiClickListener {
             displayPoi(it)
         }
+        map.setOnInfoWindowClickListener {
+            handleInfoWindowClick(it)
+        }
     }
+
+
+    private fun setupViewModel(){
+        mapsViewModel = ViewModelProviders.of(this).get(MapsViewModel::class.java)
+    }
+
 
     private fun setupPlacesClient() {
         Places.initialize(applicationContext, "AIzaSyDNmKdyC-UHu-XChS21GQsjxqgyIytXhyY");
@@ -130,7 +149,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .title(place.name)
                 .snippet(place.phoneNumber)
         )
-        marker?.tag = photo
+        marker?.tag = PlaceInfo(place, photo)
     }
 
     override fun onRequestPermissionsResult(
@@ -184,8 +203,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         )
     }
 
+    private fun handleInfoWindowClick(marker: Marker){
+        val placeInfo = (marker.tag as PlaceInfo)
+        if (placeInfo.place != null){
+            mapsViewModel.addBookmarkFomPlace(placeInfo.place, placeInfo.image)
+        }
+        marker.remove()
+    }
+
     companion object {
         private const val REQUEST_LOCATION = 1
         private const val TAG = "MapsActivity"
     }
+    class PlaceInfo(val place: Place? = null, val image: Bitmap? = null)
 }
