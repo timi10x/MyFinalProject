@@ -3,12 +3,17 @@ package com.example.myfinalproject.viewmodel
 import android.app.Application
 import android.graphics.Bitmap
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Transformations
+import com.example.myfinalproject.model.Bookmark
 import com.example.myfinalproject.repository.BookmarkRepo
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
 import timber.log.Timber
 
 class MapsViewModel(application: Application) : AndroidViewModel(application) {
     private val TAG = "MapsViewModel"
+    private var bookmarks: LiveData<List<BookmarkMarkerView>>? = null
 
     private var bookmarkRepo: BookmarkRepo = BookmarkRepo(getApplication())
 
@@ -24,4 +29,36 @@ class MapsViewModel(application: Application) : AndroidViewModel(application) {
         val newId = bookmarkRepo.addBookMark(bookmark)
         Timber.tag(TAG).i("New bookmark $newId added to the database")
     }
+
+    private fun bookmarkToMarkerView(bookmark: Bookmark): BookmarkMarkerView{
+            return BookmarkMarkerView(
+                bookmark.id,
+                LatLng(bookmark.latitude, bookmark.longitude)
+            )
+    }
+
+    private fun mapBookmarksToMarkerView(){
+        bookmarks = Transformations.map(bookmarkRepo.allBookmarks){
+            repoBookmarks ->
+            repoBookmarks.map {
+                bookmark ->
+                bookmarkToMarkerView(bookmark)
+            }
+        }
+    }
+
+    //method to return the LiveData object that will be observed by MapsActivity
+    fun getBookmarkMarkerViews():
+        LiveData<List<BookmarkMarkerView>>?{
+            if (bookmarks == null){
+                mapBookmarksToMarkerView()
+            }
+            return bookmarks
+        }
+
+
+    data class BookmarkMarkerView(
+        var id: Long? = null,
+        var location: LatLng = LatLng(0.0, 0.0)
+    )
 }

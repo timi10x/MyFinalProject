@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.example.myfinalproject.R
 import com.example.myfinalproject.adapter.BookmarkInfoAdapter
@@ -18,10 +19,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PointOfInterest
+import com.google.android.gms.maps.model.*
 import timber.log.Timber
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.PhotoMetadata
@@ -29,6 +27,8 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var map: GoogleMap
@@ -53,6 +53,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         map = googleMap
         setupMapListeners()
         setupViewModel()
+        createBookmarkMarkerObserver()
         getCurrentLocation()
     }
 
@@ -67,7 +68,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
 
-    private fun setupViewModel(){
+    private fun setupViewModel() {
         mapsViewModel = ViewModelProviders.of(this).get(MapsViewModel::class.java)
     }
 
@@ -166,6 +167,43 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    //listening to changes form the viewModel
+    //this is also the helper method that adds a single blue marker to the map based on a BookmarkMarkerView.
+    private fun addPlaceMarker(
+        bookmark: MapsViewModel.BookmarkMarkerView
+    ): Marker?{
+        val marker = map.addMarker(MarkerOptions()
+            .position
+        (bookmark.location)
+            .icon(BitmapDescriptorFactory.defaultMarker(
+                BitmapDescriptorFactory.HUE_AZURE
+            ))
+            .alpha(0.8f))
+        marker.tag = bookmark
+        return marker
+    }
+
+    //displaying all og the bookmark markers
+    private fun displayAllBookmarks(
+        bookmarks: List<MapsViewModel.BookmarkMarkerView>
+    ){
+        for (bookmark in bookmarks){
+            addPlaceMarker(bookmark)
+        }
+    }
+
+    //I want to observe all the changes to the BookmarkMarkerView objects for the VM
+    private fun createBookmarkMarkerObserver(){
+        mapsViewModel.getBookmarkMarkerViews()?.observe(
+            this, Observer {
+                map.clear()
+                it?.let {
+                    displayAllBookmarks(it)
+                }
+            }
+        )
+    }
+
     private fun setupLocationClient() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
     }
@@ -203,10 +241,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         )
     }
 
-    private fun handleInfoWindowClick(marker: Marker){
+    private fun handleInfoWindowClick(marker: Marker) {
         val placeInfo = (marker.tag as PlaceInfo)
-        if (placeInfo.place != null){
-            mapsViewModel.addBookmarkFomPlace(placeInfo.place, placeInfo.image)
+        if (placeInfo.place != null) {
+            GlobalScope.launch {
+                mapsViewModel.addBookmarkFomPlace(placeInfo.place, placeInfo.image)
+            }
         }
         marker.remove()
     }
@@ -215,5 +255,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         private const val REQUEST_LOCATION = 1
         private const val TAG = "MapsActivity"
     }
+
     class PlaceInfo(val place: Place? = null, val image: Bitmap? = null)
 }
