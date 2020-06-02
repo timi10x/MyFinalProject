@@ -2,6 +2,8 @@ package com.example.myfinalproject.ui
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.provider.MediaStore
@@ -18,7 +20,8 @@ import com.example.myfinalproject.viewmodel.BookmarkDetailsViewModel
 import kotlinx.android.synthetic.main.activity_bookmark_details.*
 import java.io.File
 
-class BookmarkDetailsActivity : AppCompatActivity(), PhotoOptionDialogFragment.PhotoOptionDialogListener {
+class BookmarkDetailsActivity : AppCompatActivity(),
+    PhotoOptionDialogFragment.PhotoOptionDialogListener {
 
     private lateinit var bookmarkDetailViewModel: BookmarkDetailsViewModel
     private var bookmarkDetailsView: BookmarkDetailsViewModel.BookmarkDetailsView? = null
@@ -41,12 +44,15 @@ class BookmarkDetailsActivity : AppCompatActivity(), PhotoOptionDialogFragment.P
         try {
             photoFile = ImageUtils.createUniqueImageFile(this)
 
-        }catch (ex: java.io.IOException){
+        } catch (ex: java.io.IOException) {
             return
         }
-        photoFile?.let {
-            photoFile->
-            val photoUri = FileProvider.getUriForFile(this, "com.example.myfinalproject.fileprovider", photoFile)
+        photoFile?.let { photoFile ->
+            val photoUri = FileProvider.getUriForFile(
+                this,
+                "com.example.myfinalproject.fileprovider",
+                photoFile
+            )
             val captureIntent =
                 Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
@@ -63,13 +69,42 @@ class BookmarkDetailsActivity : AppCompatActivity(), PhotoOptionDialogFragment.P
         }
     }
 
-    override fun onPickClick() {
-        Toast.makeText(this, "Gallery Pick", Toast.LENGTH_SHORT).show()
+    private fun updateImage(image: Bitmap) {
+        val bookmarkView = bookmarkDetailsView ?: return
+        imageViewPlace.setImageBitmap(image)
+        bookmarkView.setImage(this, image)
     }
 
-    private fun replaceImage(){
+    private fun getImageWithPath(filePath: String): Bitmap? {
+        return ImageUtils.decodeFileToSize(
+            filePath, resources.getDimensionPixelSize(
+                R.dimen.default_image_width
+            ), resources.getDimensionPixelSize(
+                R.dimen.default_image_height
+            )
+        )
+    }
+
+    override fun onPickClick() {
+        val pickIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        startActivityForResult(pickIntent, REQUEST_GALLERY_IMAGE)
+
+    }
+
+    //to process the results of the image selection, i need a method that returns a downsampled bitmap from the uri path
+
+    private fun replaceImage() {
         val newFragment = PhotoOptionDialogFragment.newInstance(this)
         newFragment?.show(supportFragmentManager, "photoOptionsDialog")
+    }
+
+    private fun getImageWithAuthority(uri: Uri): Bitmap? {
+        return ImageUtils.decodeUriStreamToSize(
+            uri,
+            resources.getDimensionPixelSize(R.dimen.default_image_width),
+            resources.getDimensionPixelSize(R.dimen.default_image_height),
+            this
+        )
     }
 
     private fun setupViewModel() {
@@ -143,7 +178,35 @@ class BookmarkDetailsActivity : AppCompatActivity(), PhotoOptionDialogFragment.P
             else -> super.onOptionsItemSelected(item)
         }
     }
-    companion object{
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == android.app.Activity.RESULT_OK) {
+            when (requestCode) {
+                REQUEST_CAPTURE_IMAGE -> {
+                    val photoFile = photoFile ?: return
+                    val uri = FileProvider.getUriForFile(
+                        this,
+                        "com.example.myfinalproject.FileProvider",
+                        photoFile
+                    )
+                    revokeUriPermission(uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    val image = getImageWithPath(photoFile.absolutePath)
+                    image?.let {
+                        updateImage(it)
+                    }
+                }
+                REQUEST_GALLERY_IMAGE -> if (data != null && data.data != null) {
+                    val imageUri = data.data
+                    val image = getImageWithAuthority(imageUri!!)
+                    image ?. let { updateImage(it) }
+                }
+            }
+        }
+    }
+
+    companion object {
         private const val REQUEST_CAPTURE_IMAGE = 1
+        private const val REQUEST_GALLERY_IMAGE = 2
     }
 }

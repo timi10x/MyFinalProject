@@ -40,6 +40,7 @@ class BookmarkDetailsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+
     private fun bookmarkToBookmarkView(bookmark: Bookmark): BookmarkDetailsView {
         return BookmarkDetailsView(
             bookmark.id,
