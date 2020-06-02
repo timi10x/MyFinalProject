@@ -4,18 +4,23 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.myfinalproject.R
 import com.example.myfinalproject.adapter.BookmarkInfoAdapter
+import com.example.myfinalproject.adapter.BookmarkListAdapter
 import com.example.myfinalproject.viewmodel.MapsViewModel
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 
+import kotlinx.android.synthetic.main.main_view_maps.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -28,6 +33,8 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
+import kotlinx.android.synthetic.main.activity_maps.*
+import kotlinx.android.synthetic.main.drawer_view_map.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -35,7 +42,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var map: GoogleMap
     private lateinit var placesClient: PlacesClient
     private lateinit var mapsViewModel: MapsViewModel
+    private lateinit var bookmarkListAdapter: BookmarkListAdapter
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private var markers = HashMap<Long, Marker>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,14 +58,50 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         setupLocationClient()
         setupPlacesClient()
         setupViewModel()
+        setupToolbar()
+        setupNavigationDrawer()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         setupMapListeners()
         setupViewModel()
-        createBookmarkMarkerObserver()
+        createBookmarkObserver()
         getCurrentLocation()
+    }
+
+    private fun updateMapToLocation(location: Location){
+        val latlng = LatLng(location.latitude, location.longitude)
+        map.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(latlng, 16.0f)
+        )
+    }
+
+    fun moveToBookmark(bookmark: MapsViewModel.BookmarkView){
+        drawerLayout.closeDrawer(drawerView)
+        val marker = markers[bookmark.id]
+
+        marker?.showInfoWindow()
+        val location = Location("")
+        location.latitude = bookmark.location.latitude
+        location.longitude = bookmark.location.longitude
+        updateMapToLocation(location)
+    }
+
+    private fun setupNavigationDrawer() {
+        val layoutManager =
+            LinearLayoutManager(this)
+        bookmarkRecyclerView.layoutManager = layoutManager
+        bookmarkListAdapter = BookmarkListAdapter(null, this)
+        bookmarkRecyclerView.adapter = bookmarkListAdapter
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(toolbar)
+        val toogle = ActionBarDrawerToggle(
+            this, drawerLayout, toolbar,
+            R.string.open_drawer, R.string.close_drawer
+        ).syncState()
     }
 
     private fun setupMapListeners() {
@@ -172,37 +218,46 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //listening to changes form the viewModel
     //this is also the helper method that adds a single blue marker to the map based on a BookmarkMarkerView.
     private fun addPlaceMarker(
-        bookmark: MapsViewModel.BookmarkMarkerView
-    ): Marker?{
-        val marker = map.addMarker(MarkerOptions()
-            .position
-        (bookmark.location)
-            .title(bookmark.name)
-            .icon(BitmapDescriptorFactory.defaultMarker(
-                BitmapDescriptorFactory.HUE_AZURE
-            ))
-            .snippet(bookmark.phone)
-            .alpha(0.8f))
+        bookmark: MapsViewModel.BookmarkView
+    ): Marker? {
+        val marker = map.addMarker(
+            MarkerOptions()
+                .position
+                    (bookmark.location)
+                .title(bookmark.name)
+                .icon(
+                    BitmapDescriptorFactory.defaultMarker(
+                        BitmapDescriptorFactory.HUE_AZURE
+                    )
+                )
+                .snippet(bookmark.phone)
+                .alpha(0.8f)
+        )
         marker.tag = bookmark
+        bookmark.id?.let {
+            markers.put(it, marker)
+        }
+        markers.clear()
         return marker
     }
 
     //displaying all og the bookmark markers
     private fun displayAllBookmarks(
-        bookmarks: List<MapsViewModel.BookmarkMarkerView>
-    ){
-        for (bookmark in bookmarks){
+        bookmarks: List<MapsViewModel.BookmarkView>
+    ) {
+        for (bookmark in bookmarks) {
             addPlaceMarker(bookmark)
         }
     }
 
     //I want to observe all the changes to the BookmarkMarkerView objects for the VM
-    private fun createBookmarkMarkerObserver(){
-        mapsViewModel.getBookmarkMarkerViews()?.observe(
+    private fun createBookmarkObserver() {
+        mapsViewModel.getBookmarkViews()?.observe(
             this, Observer {
                 map.clear()
                 it?.let {
                     displayAllBookmarks(it)
+                    bookmarkListAdapter.setBookmarkData(it)
                 }
             }
         )
@@ -246,8 +301,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun handleInfoWindowClick(marker: Marker) {
-        when(marker.tag){
-            is PlaceInfo ->{
+        when (marker.tag) {
+            is PlaceInfo -> {
                 val placeInfo = (marker.tag as PlaceInfo)
                 if (placeInfo.place != null) {
                     GlobalScope.launch {
@@ -256,8 +311,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
                 marker.remove()
             }
-            is MapsViewModel.BookmarkMarkerView ->{
-                val bookMarkerView = (marker.tag as MapsViewModel.BookmarkMarkerView)
+            is MapsViewModel.BookmarkView -> {
+                val bookMarkerView = (marker.tag as MapsViewModel.BookmarkView)
                 marker.hideInfoWindow()
                 bookMarkerView.id?.let {
                     startBookmarkDetails(it)
@@ -273,7 +328,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         const val EXTRA_BOOKMARK_ID = "com.example.myfinalproject.ui.EXTRA_BOOKMARK_ID"
     }
 
-    private fun startBookmarkDetails(bookmarkId: Long){
+    private fun startBookmarkDetails(bookmarkId: Long) {
         val intent = Intent(this, BookmarkDetailsActivity::class.java)
         startActivity(intent)
     }

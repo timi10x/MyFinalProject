@@ -1,7 +1,6 @@
 package com.example.myfinalproject.adapter
 
 import android.app.Activity
-import android.graphics.Bitmap
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -33,8 +32,8 @@ class BookmarkInfoAdapter(val context: Activity) : GoogleMap.InfoWindowAdapter {
                 imageView.setImageBitmap((marker.tag as MapsActivity.PlaceInfo).image)
             }
             //if the marker.tag us a MapViewModel ish, i wanna set the imageView bitmap from the BookmarkView
-            is MapsViewModel.BookmarkMarkerView->{
-                val bookMarkView = marker.tag as MapsViewModel.BookmarkMarkerView
+            is MapsViewModel.BookmarkView->{
+                val bookMarkView = marker.tag as MapsViewModel.BookmarkView
                 imageView.setImageBitmap(bookMarkView.getImage(context))
             }
         }

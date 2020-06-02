@@ -15,7 +15,7 @@ import timber.log.Timber
 
 class MapsViewModel(application: Application) : AndroidViewModel(application) {
     private val TAG = "MapsViewModel"
-    private var bookmarks: LiveData<List<BookmarkMarkerView>>? = null
+    private var bookmarks: LiveData<List<BookmarkView>>? = null
 
     private var bookmarkRepo: BookmarkRepo = BookmarkRepo(getApplication())
 
@@ -29,15 +29,15 @@ class MapsViewModel(application: Application) : AndroidViewModel(application) {
         bookmark.address = place.address.toString()
 
         val newId = bookmarkRepo.addBookMark(bookmark)
-        //set image methid here is used to save the image to the bookmark
+        //set image method here is used to save the image to the bookmark
         image?.let {
             bookmark.setImage(it, getApplication())
         }
         Timber.tag(TAG).i("New bookmark $newId added to the database")
     }
 
-    private fun bookmarkToMarkerView(bookmark: Bookmark): BookmarkMarkerView {
-        return BookmarkMarkerView(
+    private fun bookmarkToBookmarkView(bookmark: Bookmark): BookmarkView {
+        return BookmarkView(
             bookmark.id,
             LatLng(bookmark.latitude, bookmark.longitude),
             bookmark.name,
@@ -45,25 +45,25 @@ class MapsViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    private fun mapBookmarksToMarkerView() {
+    private fun mapBookmarksToBookmarkView() {
         bookmarks = Transformations.map(bookmarkRepo.allBookmarks) { repoBookmarks ->
             repoBookmarks.map { bookmark ->
-                bookmarkToMarkerView(bookmark)
+                bookmarkToBookmarkView(bookmark)
             }
         }
     }
 
     //method to return the LiveData object that will be observed by MapsActivity
-    fun getBookmarkMarkerViews():
-            LiveData<List<BookmarkMarkerView>>? {
+    fun getBookmarkViews():
+            LiveData<List<BookmarkView>>? {
         if (bookmarks == null) {
-            mapBookmarksToMarkerView()
+            mapBookmarksToBookmarkView()
         }
         return bookmarks
     }
 
 
-    data class BookmarkMarkerView(
+    data class BookmarkView(
         var id: Long? = null,
         var location: LatLng = LatLng(0.0, 0.0),
         var name: String = "",

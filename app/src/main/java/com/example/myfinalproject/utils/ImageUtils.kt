@@ -3,10 +3,14 @@ package com.example.myfinalproject.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Environment
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.lang.Exception
+import java.text.SimpleDateFormat
+import java.util.*
 
 //declared this object to behave as a singleton
 object ImageUtils {
@@ -26,6 +30,31 @@ object ImageUtils {
         }catch (e: Exception){
             e.printStackTrace()
         }
+    }
+
+    //this method is used to calculate the optimum inSampleSize that can be used to resize
+    //an image to a specified width and height
+    private fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int, reqHeight: Int): Int{
+        var inSampleSize = 1
+        if(height>reqHeight || width > reqWidth){
+            val halfHeight = height/2
+            val halfWidth = width/2
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth){
+                inSampleSize *=2
+            }
+        }
+        return inSampleSize
+    }
+
+    //this helper method generates unique image filename
+    @Throws(IOException::class)
+    fun createUniqueImageFile(context: Context): File{
+        val timeStamp = SimpleDateFormat("yyyMMddHHmmss").format(Date())
+        val filename = "BookMarkApp_" + timeStamp + "_"
+        val filesDir = context.getExternalFilesDir(
+            Environment.DIRECTORY_PICTURES
+        )
+        return File.createTempFile(filename, ".jpg", filesDir)
     }
 
     //loading an image from a file
