@@ -1,6 +1,7 @@
 package com.example.myfinalproject.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
@@ -151,6 +152,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .snippet(place.phoneNumber)
         )
         marker?.tag = PlaceInfo(place, photo)
+        marker?.showInfoWindow()
     }
 
     override fun onRequestPermissionsResult(
@@ -175,9 +177,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val marker = map.addMarker(MarkerOptions()
             .position
         (bookmark.location)
+            .title(bookmark.name)
             .icon(BitmapDescriptorFactory.defaultMarker(
                 BitmapDescriptorFactory.HUE_AZURE
             ))
+            .snippet(bookmark.phone)
             .alpha(0.8f))
         marker.tag = bookmark
         return marker
@@ -242,18 +246,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun handleInfoWindowClick(marker: Marker) {
-        val placeInfo = (marker.tag as PlaceInfo)
-        if (placeInfo.place != null) {
-            GlobalScope.launch {
-                mapsViewModel.addBookmarkFomPlace(placeInfo.place, placeInfo.image)
+        when(marker.tag){
+            is PlaceInfo ->{
+                val placeInfo = (marker.tag as PlaceInfo)
+                if (placeInfo.place != null) {
+                    GlobalScope.launch {
+                        mapsViewModel.addBookmarkFomPlace(placeInfo.place, placeInfo.image)
+                    }
+                }
+                marker.remove()
+            }
+            is MapsViewModel.BookmarkMarkerView ->{
+                val bookMarkerView = (marker.tag as MapsViewModel.BookmarkMarkerView)
+                marker.hideInfoWindow()
+                bookMarkerView.id?.let {
+                    startBookmarkDetails(it)
+                }
             }
         }
-        marker.remove()
+
     }
 
     companion object {
         private const val REQUEST_LOCATION = 1
         private const val TAG = "MapsActivity"
+        const val EXTRA_BOOKMARK_ID = "com.example.myfinalproject.ui.EXTRA_BOOKMARK_ID"
+    }
+
+    private fun startBookmarkDetails(bookmarkId: Long){
+        val intent = Intent(this, BookmarkDetailsActivity::class.java)
+        startActivity(intent)
     }
 
     class PlaceInfo(val place: Place? = null, val image: Bitmap? = null)

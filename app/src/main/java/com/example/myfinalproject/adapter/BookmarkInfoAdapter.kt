@@ -11,7 +11,7 @@ import com.example.myfinalproject.viewmodel.MapsViewModel
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.Marker
 
-class BookmarkInfoAdapter(context: Activity) : GoogleMap.InfoWindowAdapter {
+class BookmarkInfoAdapter(val context: Activity) : GoogleMap.InfoWindowAdapter {
     private val contents: View = context.layoutInflater.inflate(
         R.layout.content_bookmark_info, null, false
     )
@@ -35,6 +35,7 @@ class BookmarkInfoAdapter(context: Activity) : GoogleMap.InfoWindowAdapter {
             //if the marker.tag us a MapViewModel ish, i wanna set the imageView bitmap from the BookmarkView
             is MapsViewModel.BookmarkMarkerView->{
                 val bookMarkView = marker.tag as MapsViewModel.BookmarkMarkerView
+                imageView.setImageBitmap(bookMarkView.getImage(context))
             }
         }
         return contents
