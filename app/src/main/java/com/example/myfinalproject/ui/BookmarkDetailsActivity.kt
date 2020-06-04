@@ -49,7 +49,7 @@ class BookmarkDetailsActivity : AppCompatActivity(),
 
             val photoUri = FileProvider.getUriForFile(
                 this,
-                "com.raywenderlich.placebook.fileprovider",
+                "com.example.myfinalproject.FileProvider",
                 photoFile
             )
 
