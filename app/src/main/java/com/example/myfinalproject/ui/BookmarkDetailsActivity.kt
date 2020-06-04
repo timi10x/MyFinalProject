@@ -135,7 +135,7 @@ class BookmarkDetailsActivity : AppCompatActivity(),
 
                     val uri = FileProvider.getUriForFile(
                         this,
-                        "com.raywenderlich.placebook.fileprovider",
+                        "com.example.myfinalproject.FileProvider",
                         photoFile
                     )
                     revokeUriPermission(

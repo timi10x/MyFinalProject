@@ -396,7 +396,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     companion object {
         const val EXTRA_BOOKMARK_ID =
-            "com.raywenderlich.placebook.EXTRA_BOOKMARK_ID"
+            "EXTRA_BOOKMARK_ID"
         private const val REQUEST_LOCATION = 1
         private const val TAG = "MapsActivity"
         private const val AUTOCOMPLETE_REQUEST_CODE = 2
