@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.myfinalproject.utils.FileUtils
+import com.example.myfinalproject.utils.FileUtils.deleteFile
 import com.example.myfinalproject.utils.ImageUtils
 
 @Entity
@@ -15,7 +17,8 @@ data class Bookmark(
     var latitude: Double = 0.0,
     var longitude: Double = 0.0,
     var phone: String = "",
-    var notes: String = ""
+    var notes: String = "",
+    var category: String = ""
 ){
     //the function setImage provides the public interface for saving an image for a bookmark
     fun setImage(image: Bitmap, context: Context){
@@ -25,6 +28,13 @@ data class Bookmark(
             ImageUtils.saveBitmapToFile(context, image, generateImageFilename(it))
         }
     }
+
+    fun deleteImage(context: Context) {
+        id?.let {
+            FileUtils.deleteFile(context, generateImageFilename(it))
+        }
+    }
+
 
 
     //this function returns a filename based on the bookmark ID
